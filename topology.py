@@ -8,11 +8,15 @@ __author__ = 'matt'
 
 __all__ = ['get_vertices_per_edge', 'get_faces_per_edge', 'get_vert_connectivity']
 
+import sys
 import zlib
 import numpy as np
 import scipy.sparse as sp
-import cPickle as pickle
 from chumpy.utils import row, col
+if sys.version_info > (3, 0):
+    import pickle
+else:
+    import cPickle as pickle
 
 
 def get_vert_connectivity(mesh_v, mesh_f):
@@ -183,5 +187,3 @@ def get_vert_opposites_per_edge(mesh_v, mesh_f):
             else:
                 result[key] = [val]
     return result
-
-

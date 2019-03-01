@@ -9,19 +9,19 @@ See LICENCE.txt for licensing and contact information.
 import unittest
 import numpy as np
 
-from camera import *
+from .camera import *
 import chumpy as ch
 
 
 
 
 class TestCamera(unittest.TestCase):
-    
+
     def get_cam_params(self):
 
         v_raw = np.sin(np.arange(900)).reshape((-1,3))
         v_raw[:, 2] -= 2
-        
+
         rt = ch.zeros(3)
         t = ch.zeros(3)
         f = ch.array([500,500])
@@ -30,21 +30,21 @@ class TestCamera(unittest.TestCase):
 
         cam_params = {'v': ch.Ch(v_raw), 'rt': rt, 't': t, 'f': f, 'c': c, 'k': k}
         return cam_params
-    
+
     def test_project_points(self):
         self.project_points(ProjectPoints)
         self.project_points(ProjectPoints3D)
-        
+
     def project_points(self, cls):
         cam_params = self.get_cam_params()
         for key, value in cam_params.items():
-            
+
             eps = (np.random.random(value.r.size)-.5) * 1e-5
             pp_dist = cls(**cam_params)
-                        
-            old_val = pp_dist.r.copy()            
+
+            old_val = pp_dist.r.copy()
             old_dr = pp_dist.dr_wrt(value).dot(eps)
-    
+
             tmp = cam_params[key].r.copy()
             tmp += eps.reshape(tmp.shape)
 
@@ -54,7 +54,7 @@ class TestCamera(unittest.TestCase):
             raw_dr_diff = np.abs(old_dr.flatten() - diff.flatten())
             med_diff = np.median(raw_dr_diff)
             max_diff = np.max(raw_dr_diff)
-            
+
             #pct_diff = (100. * max_diff / np.mean(np.abs(old_val.flatten())))
             # print 'testing for %s' % (key,)
             # print 'empirical' + str(diff.flatten()[:5])
@@ -65,10 +65,10 @@ class TestCamera(unittest.TestCase):
 
             self.assertLess(med_diff, 1e-8)
             self.assertLess(max_diff, 5e-8)
-            
+
 
         pp_dist = cls(**cam_params)
-        
+
         # Test to make sure that depends_on is working
         for name in ('rt', 't', 'f', 'c', 'k'):
             aa = pp_dist.camera_mtx
@@ -83,4 +83,3 @@ class TestCamera(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

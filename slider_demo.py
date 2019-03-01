@@ -1,12 +1,12 @@
-from cvwrap import cv2
+from .cvwrap import cv2
 import numpy as np
 import chumpy as ch
 from copy import deepcopy
 
 def nothing(x):
     pass
-    
-    
+
+
 def get_renderer():
     import chumpy as ch
     from opendr.everything import *
@@ -25,8 +25,8 @@ def get_renderer():
     rn.vc = SphericalHarmonics(vn=VertNormals(v=rn.v, f=rn.f), components=ch.array([4.,0.,0.,0.]), light_color=ch.ones(3))
 
     return rn
-    
-    
+
+
 def main():
     # Create a black image, a window
     img = np.zeros((300,512,3), np.uint8)
@@ -57,7 +57,7 @@ def main():
         k = cv2.waitKey(1) & 0xFF
         if k == 27:
             break
-    
+
         for k, v in tracked.items():
             v[:] = np.array(cv2.getTrackbarPos(k, 'image')).astype(np.float32)*4/cnst
             if tracked[k].r[0] != old_tracked[k].r[0]:
@@ -68,10 +68,10 @@ def main():
                 # drim = drim - np.min(drim)
                 # drim = drim / np.max(drim)
                 cv2.imshow('derivatives', drim)
-               
+
         cv2.waitKey(1)
         old_tracked = deepcopy(tracked)
-    # while True: 
+    # while True:
     #     for k_change in sorted(tracked.keys()):
     #         if k_change == 'sph0':
     #             continue
@@ -81,7 +81,7 @@ def main():
     #             k = cv2.waitKey(1) & 0xFF
     #             if k == 27:
     #                 break
-    # 
+    #
     #             for k, v in tracked.items():
     #                 v[:] = np.array(cv2.getTrackbarPos(k, 'image')).astype(np.float32)*4/cnst
     #                 if tracked[k].r[0] != old_tracked[k].r[0]:
@@ -92,10 +92,10 @@ def main():
     #                     # drim = drim - np.min(drim)
     #                     # drim = drim / np.max(drim)
     #                     cv2.imshow('derivatives', drim)
-    #         
-    #         
+    #
+    #
     #             print rn.vc.components
-    # 
+    #
     #             cv2.waitKey(1)
     #             old_tracked = deepcopy(tracked)
 

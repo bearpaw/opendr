@@ -1,4 +1,4 @@
-from version import version as __version__
+from .version import version as __version__
 
 def test():
     from os.path import split
@@ -36,7 +36,7 @@ dr = rn.dr_wrt(rn.v) # or rn.vc, or rn.camera.rt, rn.camera.t, rn.camera.f, rn.c
 
 demos['moments'] = """
 from opendr.util_tests import get_earthmesh
-from opendr.simple import * 
+from opendr.simple import *
 import numpy as np
 
 w, h = 320, 240
@@ -45,8 +45,8 @@ m = get_earthmesh(trans=ch.array([0,0,4]), rotation=ch.zeros(3))
 
 # Create V, A, U, f: geometry, brightness, camera, renderer
 V = ch.array(m.v)
-A = SphericalHarmonics(vn=VertNormals(v=V, f=m.f), 
-                       components=[3.,1.,0.,0.,0.,0.,0.,0.,0.], 
+A = SphericalHarmonics(vn=VertNormals(v=V, f=m.f),
+                       components=[3.,1.,0.,0.,0.,0.,0.,0.,0.],
                        light_color=ch.ones(3))
 U = ProjectPoints(v=V, f=[300,300.], c=[w/2.,h/2.], k=ch.zeros(5),
                   t=ch.zeros(3), rt=ch.zeros(3))
@@ -62,7 +62,7 @@ rn_bw = ch.sum(rn, axis=2)
 moment = ch.sum((rn_bw * ysp * xsp).ravel())
 
 # Print our numerical result
-print moment 
+print moment
 
 # Note that opencv produces the same result for 'm21',
 # and that other moments can be created by changing "i" and "j" above
@@ -87,7 +87,7 @@ from opendr.util_tests import get_earthmesh
 m = get_earthmesh(trans=ch.array([0,0,4]), rotation=ch.zeros(3))
 w, h = (320, 240)
 
-# THESE ARE THE 3 CRITICAL LINES 
+# THESE ARE THE 3 CRITICAL LINES
 m.v = m.v[m.f.ravel()]
 m.vc = m.vc[m.f.ravel()]
 m.f = np.arange(m.f.size).reshape((-1,3))
@@ -232,34 +232,34 @@ dr = rn.dr_wrt(rn.v) # or rn.vc, or rn.camera.rt, rn.camera.t, rn.camera.f, rn.c
 """
 
 demos['optimization'] = """
-from opendr.simple import *      
-import numpy as np 
+from opendr.simple import *
+import numpy as np
 import matplotlib.pyplot as plt
 w, h = 320, 240
-        
+
 try:
     m = load_mesh('earth.obj')
-except:                                                             
+except:
     from opendr.util_tests import get_earthmesh
-    m = get_earthmesh(trans=ch.array([0,0,0]), rotation=ch.zeros(3))                                             
-                                                                                
-# Create V, A, U, f: geometry, brightness, camera, renderer                     
-V = ch.array(m.v)                                                               
-A = SphericalHarmonics(vn=VertNormals(v=V, f=m.f),                              
+    m = get_earthmesh(trans=ch.array([0,0,0]), rotation=ch.zeros(3))
+
+# Create V, A, U, f: geometry, brightness, camera, renderer
+V = ch.array(m.v)
+A = SphericalHarmonics(vn=VertNormals(v=V, f=m.f),
                        components=[3.,2.,0.,0.,0.,0.,0.,0.,0.],
-                       light_color=ch.ones(3))                                  
-U = ProjectPoints(v=V, f=[w,w], c=[w/2.,h/2.], k=ch.zeros(5),              
-                  t=ch.zeros(3), rt=ch.zeros(3))                                
-f = TexturedRenderer(vc=A, camera=U, f=m.f, bgcolor=[0.,0.,0.],                 
-                     texture_image=m.texture_image, vt=m.vt, ft=m.ft,           
-                     frustum={'width':w, 'height':h, 'near':1,'far':20})     
+                       light_color=ch.ones(3))
+U = ProjectPoints(v=V, f=[w,w], c=[w/2.,h/2.], k=ch.zeros(5),
+                  t=ch.zeros(3), rt=ch.zeros(3))
+f = TexturedRenderer(vc=A, camera=U, f=m.f, bgcolor=[0.,0.,0.],
+                     texture_image=m.texture_image, vt=m.vt, ft=m.ft,
+                     frustum={'width':w, 'height':h, 'near':1,'far':20})
 
 
-# Parameterize the vertices                                                     
-translation, rotation = ch.array([0,0,8]), ch.zeros(3)                          
-f.v = translation + V.dot(Rodrigues(rotation))                                  
-           
-observed = f.r 
+# Parameterize the vertices
+translation, rotation = ch.array([0,0,8]), ch.zeros(3)
+f.v = translation + V.dot(Rodrigues(rotation))
+
+observed = f.r
 np.random.seed(1)
 translation[:] = translation.r + np.random.rand(3)
 rotation[:] = rotation.r + np.random.rand(3) *.2
@@ -273,46 +273,46 @@ def cb(_):
     import cv2
     global E_raw
     cv2.imshow('Absolute difference', np.abs(E_raw.r))
-    cv2.waitKey(1)                  
+    cv2.waitKey(1)
 
-print 'OPTIMIZING TRANSLATION, ROTATION, AND LIGHT PARMS'    
+print 'OPTIMIZING TRANSLATION, ROTATION, AND LIGHT PARMS'
 free_variables=[translation, rotation, A.components]
-ch.minimize({'pyr': E_pyr}, x0=free_variables, callback=cb) 
-ch.minimize({'raw': E_raw}, x0=free_variables, callback=cb) 
+ch.minimize({'pyr': E_pyr}, x0=free_variables, callback=cb)
+ch.minimize({'raw': E_raw}, x0=free_variables, callback=cb)
 
 """
 
 demos['optimization_cpl'] = """
-from opendr.simple import *      
-import numpy as np 
+from opendr.simple import *
+import numpy as np
 import matplotlib.pyplot as plt
 w, h = 320, 240
-        
+
 try:
     m = load_mesh('earth.obj')
-except:                                                             
+except:
     from opendr.util_tests import get_earthmesh
-    m = get_earthmesh(trans=ch.array([0,0,0]), rotation=ch.zeros(3))                                             
-                                                                                
-# Create V, A, U, f: geometry, brightness, camera, renderer                     
-V = ch.array(m.v)                                                               
-A = SphericalHarmonics(vn=VertNormals(v=V, f=m.f),                              
+    m = get_earthmesh(trans=ch.array([0,0,0]), rotation=ch.zeros(3))
+
+# Create V, A, U, f: geometry, brightness, camera, renderer
+V = ch.array(m.v)
+A = SphericalHarmonics(vn=VertNormals(v=V, f=m.f),
                        components=[3.,2.,0.,0.,0.,0.,0.,0.,0.],
-                       light_color=ch.ones(3))                                  
-U = ProjectPoints(v=V, f=[w,w], c=[w/2.,h/2.], k=ch.zeros(5),              
-                  t=ch.zeros(3), rt=ch.zeros(3))                                
-f = TexturedRenderer(vc=A, camera=U, f=m.f, bgcolor=[0.,0.,0.],                 
-                     texture_image=m.texture_image, vt=m.vt, ft=m.ft,           
-                     frustum={'width':w, 'height':h, 'near':1,'far':20})     
+                       light_color=ch.ones(3))
+U = ProjectPoints(v=V, f=[w,w], c=[w/2.,h/2.], k=ch.zeros(5),
+                  t=ch.zeros(3), rt=ch.zeros(3))
+f = TexturedRenderer(vc=A, camera=U, f=m.f, bgcolor=[0.,0.,0.],
+                     texture_image=m.texture_image, vt=m.vt, ft=m.ft,
+                     frustum={'width':w, 'height':h, 'near':1,'far':20})
 
 
-# Parameterize the vertices                                                     
-translation, rotation = ch.array([0,0,8]), ch.zeros(3)   
-model_v = translation + ch.array(V.r).dot(Rodrigues(rotation))   
+# Parameterize the vertices
+translation, rotation = ch.array([0,0,8]), ch.zeros(3)
+model_v = translation + ch.array(V.r).dot(Rodrigues(rotation))
 
-# Simulate an observed image                               
+# Simulate an observed image
 V[:] = model_v.r
-observed = f.r 
+observed = f.r
 
 np.random.seed(1)
 translation[:] = translation.r + np.random.rand(3)
@@ -328,23 +328,23 @@ def cb(_):
     import cv2
     global E_raw
     cv2.imshow('Absolute difference', np.abs(E_raw.r))
-    cv2.waitKey(1)                  
+    cv2.waitKey(1)
 
-print 'OPTIMIZING TRANSLATION, ROTATION, AND LIGHT PARMS'    
+print 'OPTIMIZING TRANSLATION, ROTATION, AND LIGHT PARMS'
 free_variables=[translation, rotation, A.components, V]
-ch.minimize({'pyr': E_pyr, 'cpl': (V - model_v)*1e-4}, x0=free_variables, callback=cb) 
-ch.minimize({'raw': E_raw, 'cpl': V - model_v}, x0=free_variables, callback=cb) 
+ch.minimize({'pyr': E_pyr, 'cpl': (V - model_v)*1e-4}, x0=free_variables, callback=cb)
+ch.minimize({'raw': E_raw, 'cpl': V - model_v}, x0=free_variables, callback=cb)
 """
 
 def demo(which=None):
     import re
     if which not in demos:
-        print 'Please indicate which demo you want, as follows:'
+        print('Please indicate which demo you want, as follows:')
         for key in demos:
-            print "\tdemo('%s')" % (key,)
+            print("\tdemo('%s')" % (key,))
         return
 
-    print '- - - - - - - - - - - <CODE> - - - - - - - - - - - -'
-    print re.sub('global.*\n','',demos[which])
-    print '- - - - - - - - - - - </CODE> - - - - - - - - - - - -\n'
+    print('- - - - - - - - - - - <CODE> - - - - - - - - - - - -')
+    print(re.sub('global.*\n','',demos[which]))
+    print('- - - - - - - - - - - </CODE> - - - - - - - - - - - -\n')
     exec('global np\n' + demos[which], globals(), locals())

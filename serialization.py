@@ -9,9 +9,9 @@ __author__ = 'matt'
 __all__ = ['load_mesh', 'load_image']
 
 from os.path import split, splitext, join, exists, normpath
-from cvwrap import cv2
+from .cvwrap import cv2
 import numpy as np
-from dummy import Minimal
+from .dummy import Minimal
 
 
 def load_image(filename):
@@ -190,7 +190,7 @@ def read_ply(filename):
 
     v = np.vstack([newelems['vertex'][s] for s in ['x', 'y', 'z']]).T.copy()
     v = np.asarray(v, dtype=np.float64)
-    f = newelems['face'].values()[0]
+    f = list(newelems['face'].values())[0]
 
     mesh = Minimal(v=v, f=f)
 
@@ -198,4 +198,3 @@ def read_ply(filename):
 
 if __name__ == '__main__':
     pass
-

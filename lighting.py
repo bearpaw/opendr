@@ -17,7 +17,7 @@ import scipy
 from chumpy.utils import row, col
 import chumpy as ch
 from chumpy.ch import Ch
-from geometry import VertNormals
+from .geometry import VertNormals
 from chumpy import multiply, maximum
 
 
@@ -37,7 +37,7 @@ def real_sh_coeff(xyz_samples):
     real_coeff[:,6] = (np.sqrt(5)/(2*d_sqrt_pi))*(3*xyz_samples[:,2]**2-1)
     real_coeff[:,7] = (np.sqrt(15)/d_sqrt_pi)*xyz_samples[:,0]*xyz_samples[:,2]
     real_coeff[:,8] = (np.sqrt(15)/(2*d_sqrt_pi))*(xyz_samples[:,0]**2 - xyz_samples[:,1]**2)
-    return real_coeff	
+    return real_coeff
 
 
 
@@ -48,7 +48,7 @@ class SphericalHarmonics(Ch):
     d_sqrt_pi = 2*np.sqrt(np.pi)
     K = np.array([
         1./d_sqrt_pi,
-        np.sqrt(3)/d_sqrt_pi,        
+        np.sqrt(3)/d_sqrt_pi,
 	np.sqrt(3)/d_sqrt_pi,
 	np.sqrt(3)/d_sqrt_pi,
 	np.sqrt(15)/d_sqrt_pi,
@@ -64,13 +64,13 @@ class SphericalHarmonics(Ch):
     def on_changed(self, which):
         if 'vn' in which:
             vn = self.vn.r.reshape((-1,3))
-            
+
             # Conversion from normals to spherical harmonics found in...
             # http://en.wikipedia.org/wiki/Spherical_coordinate_system#Cartesian_coordinates
             self.theta = np.arccos(vn[:,2])
             self.phi = np.arctan2(vn[:,1], vn[:,0])
-            
-            self.sh_coeffs = real_sh_coeff(vn)            
+
+            self.sh_coeffs = real_sh_coeff(vn)
             self.num_verts = self.sh_coeffs.shape[0]
 
         if 'light_color' in which or self.mtx.shape[1] != self.num_verts:
@@ -79,15 +79,15 @@ class SphericalHarmonics(Ch):
             JS = np.repeat(np.arange(self.num_verts), nc)
             data = (row(self.light_color)*np.ones((self.num_verts, nc))).ravel()
             self.mtx = sp.csc_matrix((data, (IS,JS)), shape=(self.num_verts*nc, self.num_verts))
-            
-    
+
+
     def compute_r(self):
         comps = self.components.r
         n = len(comps)
         result = self.mtx.dot(self.sh_coeffs[:,:n].dot(col(self.components.r)))
         result[result<0] = 0
         return result.reshape((-1,self.num_channels))
-    
+
     def compute_dr_wrt(self, wrt):
         comps = np.zeros(9)
         comps[:len(self.components.r)] = self.components.r
@@ -105,14 +105,14 @@ class SphericalHarmonics(Ch):
             #real_coeff[:,4] = (np.sqrt(15)/d_sqrt_pi)*xyz_samples[:,0]*xyz_samples[:,1]
             VS0 += vn[:,1] * comps[4]
             VS1 += vn[:,0] * comps[4]
-            
+
             #real_coeff[:,5] = (np.sqrt(15)/d_sqrt_pi)*xyz_samples[:,1]*xyz_samples[:,2]
             VS1 += vn[:,2]*comps[5]
             VS2 += vn[:,1]*comps[5]
-            
+
             #real_coeff[:,6] = (np.sqrt(5)/2*d_sqrt_pi)*(3*xyz_samples[:,2]**2-1)
             VS2 += 6*vn[:,2] * comps[6]
-            
+
             #real_coeff[:,7] = (np.sqrt(15)/d_sqrt_pi)*xyz_samples[:,0]*xyz_samples[:,2]
             VS0 += vn[:,2] * comps[7]
             VS2 += vn[:,0] * comps[7]
@@ -120,26 +120,26 @@ class SphericalHarmonics(Ch):
             #real_coeff[:,8] = (np.sqrt(15)/(2*d_sqrt_pi))*(xyz_samples[:,0]**2 - xyz_samples[:,1]**2)
             VS0 += 2. * vn[:,0] * comps[8]
             VS1 -= 2. * vn[:,1] * comps[8]
-            
+
             rng = np.arange(self.sh_coeffs.shape[0])
             IS = np.concatenate((rng, rng, rng))
             JS = np.concatenate((rng*3, rng*3+1, rng*3+2))
             data = np.concatenate((VS0, VS1, VS2))
             result = self.mtx.dot(sp.csc_matrix((data, (IS, JS))))
-            
+
         elif wrt is self.components:
             comps = self.components.r
-            n = len(comps)            
+            n = len(comps)
             result = self.mtx.dot(self.sh_coeffs[:,:n])
         else:
             return None
-            
+
         which = np.nonzero(self.r.ravel()>0)[0]
         data = np.ones_like(which)
         gr_equal_zero = sp.csc_matrix((data, (which, which)), shape=(self.r.size, self.r.size))
 
         return gr_equal_zero.dot(result)
-    
+
 
 def lambertian_spotlight(v, vn, pos, dir, spot_exponent, camcoord=False, camera_t=None, camera_rt=None):
     """
@@ -182,19 +182,19 @@ def lambertian_spotlight(v, vn, pos, dir, spot_exponent, camcoord=False, camera_
 class LambertianPointLight(Ch):
     terms = 'f', 'num_verts', 'light_color'
     dterms = 'light_pos', 'v', 'vc', 'vn'
-    
+
     def on_changed(self, which):
         if not hasattr(self, '_lpl'):
             self.add_dterm('_lpl', maximum(multiply(a=multiply()), 0.0))
         if not hasattr(self, 'ldn'):
-            self.ldn = LightDotNormal(self.v.r.size/3)            
+            self.ldn = LightDotNormal(self.v.r.size/3)
         if not hasattr(self, 'vn'):
             logger.info('LambertianPointLight using auto-normals. This will be slow for derivative-free computations.')
             self.vn = VertNormals(f=self.f, v=self.v)
             self.vn.needs_autoupdate = True
         if 'v' in which and hasattr(self.vn, 'needs_autoupdate') and self.vn.needs_autoupdate:
             self.vn.v = self.v
-        
+
         ldn_args = {k: getattr(self, k) for k in which if k in ('light_pos', 'v', 'vn')}
         if len(ldn_args) > 0:
             self.ldn.set(**ldn_args)
@@ -214,10 +214,10 @@ class LambertianPointLight(Ch):
     @property
     def num_channels(self):
         return self.light_color.size
-        
+
     def compute_r(self):
         return self._lpl.r
-        
+
     def compute_dr_wrt(self, wrt):
         if wrt is self._lpl:
             return 1
@@ -247,4 +247,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

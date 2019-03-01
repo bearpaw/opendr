@@ -15,21 +15,21 @@ try:
     import matplotlib.pyplot as plt
     import matplotlib
 except:
-    from dummy import dummy as plt
+    from .dummy import dummy as plt
 
-from renderer import *
+from .renderer import *
 from chumpy import Ch
 from chumpy.utils import row, col
-from lighting import *
-from util_tests import get_earthmesh, process
+from .lighting import *
+from .util_tests import get_earthmesh, process
 from collections import OrderedDict
 
 
-    
+
 visualize = False
-    
+
 def getcam():
-    from camera import ProjectPoints
+    from .camera import ProjectPoints
 
     w = 256
     h = 192
@@ -58,7 +58,7 @@ class TestRenderer(unittest.TestCase):
         np.random.seed(0)
         camera, frustum = getcam()
         mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([0,0,0]))
-        
+
         lighting_3channel = LambertianPointLight(
             f=mesh.f,
             num_verts=len(mesh.v),
@@ -80,11 +80,11 @@ class TestRenderer(unittest.TestCase):
 
         lightings = {1: lighting_1channel, 3: lighting_3channel}
         return mesh, lightings, camera, frustum, renderers
-        
+
     def test_pyramids(self):
         """ Test that pyramid construction doesn't crash. No quality testing here. """
         mesh, lightings, camera, frustum, renderers = self.load_basics()
-        from filters import gaussian_pyramid, laplacian_pyramid, GaussPyrDownOne
+        from .filters import gaussian_pyramid, laplacian_pyramid, GaussPyrDownOne
 
         camera.v = mesh.v
         for rn in renderers:
@@ -103,7 +103,7 @@ class TestRenderer(unittest.TestCase):
                     tm = time.time()
                     _ = r.dr_wrt(rn)
                     #print "trial %d: %.2fS " % (ii, time.time() - tm)
-        
+
     def test_distortion(self):
         mesh, lightings, camera, frustum, renderers = self.load_basics()
 
@@ -137,7 +137,7 @@ class TestRenderer(unittest.TestCase):
             [0, 0, 1]
         ])
 
-        from cvwrap import cv2
+        from .cvwrap import cv2
         im_undistorted = cv2.undistort(im_distorted, cmtx, cr.camera.k.r)
 
         d1 = (im_original - im_distorted).ravel()
@@ -199,7 +199,7 @@ class TestRenderer(unittest.TestCase):
             lighting = lightings[renderer.num_channels]
 
             # Render a rotating mesh
-            mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([math.pi/2.,0,0]))        
+            mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([math.pi/2.,0,0]))
             mesh_verts = Ch(mesh.v.flatten())
             camera.v = mesh_verts
             lighting.v = mesh_verts
@@ -263,15 +263,15 @@ class TestRenderer(unittest.TestCase):
                         plt.title(title)
                         plt.imshow(im)
 
-                    print '%s: median nonzero %.2e' % (atrname, mederror,)
-                    print '%s: mean nonzero %.2e' % (atrname, meanerror,)
+                    print('%s: median nonzero %.2e' % (atrname, mederror,))
+                    print('%s: mean nonzero %.2e' % (atrname, meanerror,))
                     plt.draw()
                     plt.show()
 
                 self.assertLess(meanerror, info['meannz'])
                 self.assertLess(mederror, info['mednz'])
 
-        
+
     def test_vert_derivatives(self):
 
         mesh, lightings, camera, frustum, renderers = self.load_basics()
@@ -282,8 +282,8 @@ class TestRenderer(unittest.TestCase):
             im_shape = renderer.shape
 
             # Render a rotating mesh
-            mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([math.pi/2.,0,0]))        
-            mesh_verts = Ch(mesh.v.flatten())  
+            mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([math.pi/2.,0,0]))
+            mesh_verts = Ch(mesh.v.flatten())
             camera.set(v=mesh_verts)
             lighting.set(v=mesh_verts)
             renderer.set(camera=camera)
@@ -292,7 +292,7 @@ class TestRenderer(unittest.TestCase):
             # Get pixels and derivatives
             r = renderer.r
             dr = renderer.dr_wrt(mesh_verts)
-            
+
             # Establish a random direction
             direction = (np.random.rand(mesh.v.size).reshape(mesh.v.shape)-.5)*.1 + np.sin(mesh.v*10)*.2
             direction *= .5
@@ -303,7 +303,7 @@ class TestRenderer(unittest.TestCase):
             lighting.set(v=mesh_verts)
             renderer.set(v=mesh_verts, vc=lighting)
             rfwd = renderer.r
-            
+
             # Render going backward in that direction
             mesh_verts = Ch(mesh.v-direction*eps/2.)
             lighting.set(v=mesh_verts)
@@ -312,7 +312,7 @@ class TestRenderer(unittest.TestCase):
 
             # Establish empirical and predicted derivatives
             dr_empirical = (np.asarray(rfwd, np.float64) - np.asarray(rbwd, np.float64)).ravel() / eps
-            dr_predicted = dr.dot(col(direction.flatten())).reshape(dr_empirical.shape) 
+            dr_predicted = dr.dot(col(direction.flatten())).reshape(dr_empirical.shape)
 
             images = OrderedDict()
             images['shifted verts'] = np.asarray(rfwd, np.float64)-.5
@@ -330,20 +330,20 @@ class TestRenderer(unittest.TestCase):
                     im = process(images[title].reshape(im_shape), vmin=-.5, vmax=.5)
                     plt.title(title)
                     plt.imshow(im)
-                    
-                print 'verts: median nonzero %.2e' % (np.median(np.abs(nonzero)),)
-                print 'verts: mean nonzero %.2e' % (np.mean(np.abs(nonzero)),)
+
+                print('verts: median nonzero %.2e' % (np.median(np.abs(nonzero)),))
+                print('verts: mean nonzero %.2e' % (np.mean(np.abs(nonzero)),))
                 plt.draw()
                 plt.show()
 
             self.assertLess(np.mean(np.abs(nonzero)), 7e-2)
             self.assertLess(np.median(np.abs(nonzero)), 4e-2)
-            
+
 
     def test_lightpos_derivatives(self):
-        
+
         mesh, lightings, camera, frustum, renderers = self.load_basics()
-        
+
 
         for renderer in renderers:
 
@@ -351,7 +351,7 @@ class TestRenderer(unittest.TestCase):
             lighting = lightings[renderer.num_channels]
 
             # Render a rotating mesh
-            mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([math.pi/2.,0,0]))        
+            mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([math.pi/2.,0,0]))
             mesh_verts = Ch(mesh.v.flatten())
             camera.set(v=mesh_verts)
 
@@ -360,23 +360,23 @@ class TestRenderer(unittest.TestCase):
             light1_pos = Ch(np.array([-1000,-1000,-1000]))
             lighting.set(light_pos=light1_pos, v=mesh_verts)
             renderer.set(vc=lighting, v=mesh_verts)
-            
-            dr = renderer.dr_wrt(light1_pos).copy()            
+
+            dr = renderer.dr_wrt(light1_pos).copy()
 
             # Establish a random direction for the light
             direction = (np.random.rand(3)-.5)*1000.
             eps = 1.
-        
+
             # Find empirical forward derivatives in that direction
             lighting.set(light_pos = light1_pos.r + direction*eps/2.)
             renderer.set(vc=lighting)
             rfwd = renderer.r
-        
+
             # Find empirical backward derivatives in that direction
             lighting.set(light_pos = light1_pos.r - direction*eps/2.)
             renderer.set(vc=lighting)
             rbwd = renderer.r
-        
+
             # Establish empirical and predicted derivatives
             dr_empirical = (np.asarray(rfwd, np.float64) - np.asarray(rbwd, np.float64)).ravel() / eps
             dr_predicted = dr.dot(col(direction.flatten())).reshape(dr_empirical.shape)
@@ -397,30 +397,30 @@ class TestRenderer(unittest.TestCase):
                     im = process(images[title].reshape(im_shape), vmin=-.5, vmax=.5)
                     plt.title(title)
                     plt.imshow(im)
-                
+
                 plt.show()
-                print 'lightpos: median nonzero %.2e' % (np.median(np.abs(nonzero)),)
-                print 'lightpos: mean nonzero %.2e' % (np.mean(np.abs(nonzero)),)
+                print('lightpos: median nonzero %.2e' % (np.median(np.abs(nonzero)),))
+                print('lightpos: mean nonzero %.2e' % (np.mean(np.abs(nonzero)),))
             self.assertLess(np.mean(np.abs(nonzero)), 2.4e-2)
             self.assertLess(np.median(np.abs(nonzero)), 1.2e-2)
-            
-        
-        
+
+
+
     def test_color_derivatives(self):
-        
+
         mesh, lightings, camera, frustum, renderers = self.load_basics()
-        
+
         for renderer in renderers:
 
             im_shape = renderer.shape
             lighting = lightings[renderer.num_channels]
 
             # Get pixels and dI/dC
-            mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([math.pi/2.,0,0]))        
+            mesh = get_earthmesh(trans=np.array([0,0,5]), rotation = np.array([math.pi/2.,0,0]))
             mesh_verts = Ch(mesh.v)
             mesh_colors = Ch(mesh.vc)
 
-            camera.set(v=mesh_verts)            
+            camera.set(v=mesh_verts)
 
             # import pdb; pdb.set_trace()
             # print '-------------------------------------------'
@@ -469,20 +469,20 @@ class TestRenderer(unittest.TestCase):
                     im = process(images[title].reshape(im_shape), vmin=-.5, vmax=.5)
                     plt.title(title)
                     plt.imshow(im)
-                    
+
                 plt.show()
-                print 'color: median nonzero %.2e' % (np.median(np.abs(nonzero)),)
-                print 'color: mean nonzero %.2e' % (np.mean(np.abs(nonzero)),)
+                print('color: median nonzero %.2e' % (np.median(np.abs(nonzero)),))
+                print('color: mean nonzero %.2e' % (np.mean(np.abs(nonzero)),))
             self.assertLess(np.mean(np.abs(nonzero)), 2e-2)
             self.assertLess(np.median(np.abs(nonzero)), 4.5e-3)
-                     
+
 
 
 def plt_imshow(im):
-    #im = process(im, vmin, vmax)    
+    #im = process(im, vmin, vmax)
     result = plt.imshow(im)
     plt.axis('off')
-    plt.subplots_adjust(bottom=0.01, top=.99, left=0.01, right=.99)    
+    plt.subplots_adjust(bottom=0.01, top=.99, left=0.01, right=.99)
     return result
 
 
@@ -494,4 +494,3 @@ if __name__ == '__main__':
     unittest.TextTestRunner(verbosity=2).run(suite)
     plt.show()
     import pdb; pdb.set_trace()
-
